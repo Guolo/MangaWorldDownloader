@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import aiohttp
 from rich.live import Live
 
+from src.comic_generator import generate_comic_files
 from src.config import DOWNLOAD_FOLDER, parse_arguments
 from src.crawler_utils import (
     extract_chapters_info,
@@ -24,7 +25,6 @@ from src.crawler_utils import (
 from src.download_utils import download_chapter, run_in_parallel
 from src.format_utils import extract_manga_info
 from src.general_utils import clear_terminal, fetch_page, validate_index_range
-from src.pdf_generator import generate_pdf_files
 from src.progress_utils import (
     create_progress_bar,
     create_progress_table,
@@ -36,23 +36,28 @@ if TYPE_CHECKING:
     from rich.progress import Progress
 
 
-def process_pdf_generation(
+def process_comic_generation(
     manga_name: str,
     job_progress: Progress,
     *,
-    single_pdf: bool = False,
+    single_file: bool = False,
+    output_format: str = "pdf",
 ) -> None:
-    """Process the generation of PDF files for a specific manga."""
+    """Process the generation of comic files for a specific manga."""
     manga_parent_folder = Path(DOWNLOAD_FOLDER) / manga_name
-    generate_pdf_files(str(manga_parent_folder), job_progress, single_pdf=single_pdf)
+    generate_comic_files(
+        str(manga_parent_folder),
+        job_progress,
+        single_file=single_file,
+        output_format=output_format,
+    )
 
 
 def download_chapter_with_progress(
     manga_name: str,
     download_links: list[str],
     pages_per_chapter: list[int],
-    *,
-    generate_pdf: bool = False,
+    output_format: str | None = None,
     volume_name: str | None = None,
 ) -> None:
     """Download the chapters of a manga and displays a progress bar.
@@ -75,16 +80,20 @@ def download_chapter_with_progress(
             pages_per_chapter,
             working_path,
         )
-        if generate_pdf:
-            single_pdf = volume_name is not None
-            process_pdf_generation(working_path, job_progress, single_pdf=single_pdf)
+        if output_format:
+            single_file = volume_name is not None
+            process_comic_generation(
+                working_path,
+                job_progress,
+                single_file=single_file,
+                output_format=output_format,
+            )
 
 
 async def process_volume(
     volume: dict,
     manga_info: tuple[str, str],
-    *,
-    generate_pdf: bool = False,
+    output_format: str | None = None,
 ) -> None:
     """Process and downloads a single volume."""
     manga_name, manga_type = manga_info
@@ -99,24 +108,27 @@ async def process_volume(
     ]
 
     download_links = await extract_download_links(
-        chapter_urls, 0, len(chapter_urls), manga_type,
+        chapter_urls,
+        0,
+        len(chapter_urls),
+        manga_type,
     )
 
     download_chapter_with_progress(
         manga_name,
         download_links,
         pages_per_chapter,
-        generate_pdf=generate_pdf,
+        output_format=output_format,
         volume_name=volume["name"],
     )
+
 
 async def process_volumes_download(
     soup: BeautifulSoup,
     manga_info: tuple[str, str],
     start_index: int | None = None,
     end_index: int | None = None,
-    *,
-    generate_pdf: bool = False,
+    output_format: str | None = None,
 ) -> None:
     """Process selected manga volumes and downloads their chapters."""
     volumes = extract_volume_info(soup)
@@ -140,15 +152,16 @@ async def process_volumes_download(
         await process_volume(
             volume,
             manga_info,
-            generate_pdf=generate_pdf,
+            output_format=output_format,
         )
+
 
 async def process_manga_download(
     url: str,
     start_index: int | None = None,
     end_index: int | None = None,
     *,
-    generate_pdf: bool = False,
+    output_format: str | None = None,
     volume_mode: bool = False,
 ) -> None:
     """Process the complete download and PDF generation workflow for a manga."""
@@ -162,7 +175,7 @@ async def process_manga_download(
             (manga_name, manga_type),
             start_index,
             end_index,
-            generate_pdf=generate_pdf,
+            output_format=output_format,
         )
 
     else:
@@ -182,7 +195,7 @@ async def process_manga_download(
             manga_name,
             download_links,
             pages_per_chapter[start_index:end_index],
-            generate_pdf=generate_pdf,
+            output_format=output_format,
         )
 
 
@@ -194,7 +207,7 @@ async def main() -> None:
         args.url,
         start_index=args.start,
         end_index=args.end,
-        generate_pdf=args.pdf,
+        output_format=args.format,
         volume_mode=args.volume,
     )
 

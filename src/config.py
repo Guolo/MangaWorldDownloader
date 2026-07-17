@@ -76,10 +76,11 @@ HEADERS = {
 def add_common_arguments(parser: ArgumentParser) -> None:
     """Add arguments shared across parsers."""
     parser.add_argument(
-        "-p",
-        "--pdf",
-        action="store_true",
-        help="Generate PDF after downloading the manga.",
+        "-f",
+        "--format",
+        choices=["pdf", "cbz"],
+        default=None,
+        help="Output format for downloaded manga.",
     )
     parser.add_argument(
         "-v",

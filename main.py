@@ -16,7 +16,7 @@ from src.general_utils import clear_terminal
 async def process_urls(urls: list[str], args: Namespace) -> None:
     """Validate and downloads items for a list of URLs."""
     for url in urls:
-        await process_manga_download(url, generate_pdf=args.pdf)
+        await process_manga_download(url, output_format=args.format)
 
 
 async def main() -> None:
