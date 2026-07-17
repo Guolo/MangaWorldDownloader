@@ -10,7 +10,7 @@
 - Downloads chapters by volume (if available).
 - Supports [batch downloading](https://github.com/Lysagxra/MangaWorldDownloader?tab=readme-ov-file#batch-download) via a list of URLs.
 - Supports downloading a [specified range of chapters](https://github.com/Lysagxra/MangaWorldDownloader?tab=readme-ov-file#single-manga-download).
-- Supports the [generation of PDF files](https://github.com/Lysagxra/MangaWorldDownloader?tab=readme-ov-file#pdf-generation) from the downloaded chapters.
+- Supports the [generation of PDF and CBZ files](https://github.com/Lysagxra/MangaWorldDownloader?tab=readme-ov-file#comic-files-generation) from the downloaded chapters.
 - Track and display download progress.
 - Organize and format manga chapters.
 
@@ -160,16 +160,17 @@ python3 main.py
 
 The downloaded files will be saved in the `Downloads` directory.
 
-## PDF Generation
+## Comic File Generation
 
-This tool includes a feature to generate PDFs from downloaded manga chapters. You can use the `--pdf` argument from the command line to enable this functionality.
+This tool includes a feature to generate comic files from downloaded manga chapters. Supported formats are PDF and CBZ.
+You can use the `--format` argument from the command line to select the desired output format.
 
 ### Usage
 
-To generate PDFs for the downloaded manga, run the following command:
+To generate PDF files for the downloaded manga, run the following command:
 
 ```bash
-python3 main.py --pdf
+python3 main.py --format pdf
 ```
 
 This will create PDF files for each chapter and save them in the specified output directory. The generated PDFs maintain the original quality of the downloaded images and are optimized for readability.
