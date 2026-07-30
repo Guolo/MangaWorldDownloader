@@ -29,6 +29,7 @@ from src.progress_utils import (
     create_progress_bar,
     create_progress_table,
     create_select_items_list,
+    init_progress_state,
 )
 
 if TYPE_CHECKING:
@@ -59,6 +60,7 @@ def download_chapter_with_progress(
     pages_per_chapter: list[int],
     output_format: str | None = None,
     volume_name: str | None = None,
+    start_offset: int = 0,
 ) -> None:
     """Download the chapters of a manga and displays a progress bar.
 
@@ -68,6 +70,12 @@ def download_chapter_with_progress(
         manga_name if volume_name is None else f"{manga_name} - {volume_name}"
     )
     working_path = manga_name if volume_name is None else f"{manga_name}/{volume_name}"
+
+    # Inizializza/azzera lo stato esposto su progress.json per questo run.
+    chapter_labels = [
+        f"Chapter {start_offset + indx + 1}" for indx in range(len(download_links))
+    ]
+    init_progress_state(task_description, chapter_labels)
 
     job_progress = create_progress_bar()
     progress_table = create_progress_table(task_description, job_progress)
@@ -79,6 +87,7 @@ def download_chapter_with_progress(
             job_progress,
             pages_per_chapter,
             working_path,
+            start_offset=start_offset,
         )
         if output_format:
             single_file = volume_name is not None
@@ -194,8 +203,9 @@ async def process_manga_download(
         download_chapter_with_progress(
             manga_name,
             download_links,
-            pages_per_chapter[start_index:end_index],
+            pages_per_chapter[start_chapter:end_chapter],
             output_format=output_format,
+            start_offset=start_chapter,
         )
 
 
