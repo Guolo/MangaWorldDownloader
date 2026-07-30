@@ -22,6 +22,7 @@ from .config import (
     URL_FILENAME_REGEX,
 )
 from .file_utils import create_download_directory, write_file
+from .progress_utils import update_chapter_progress
 
 
 def manage_running_tasks(futures: dict, job_progress: Progress) -> None:
@@ -38,6 +39,7 @@ def run_in_parallel(
     items: list,
     job_progress: Progress,
     *args: tuple,
+    start_offset: int = 0,
 ) -> None:
     """Execute a function in parallel for a list of items, updating progress."""
     num_items = len(items)
@@ -50,13 +52,14 @@ def run_in_parallel(
             visible=True,
         )
         for indx, item in enumerate(items):
+            global_indx = indx + start_offset
             task = job_progress.add_task(
-                f"[{TASK_COLOR}]Chapter {indx + 1}/{num_items}",
+                f"[{TASK_COLOR}]Chapter {global_indx + 1}/{num_items}",
                 total=100,
                 visible=False,
             )
             task_info = job_progress, task, overall_task
-            item_info = indx, item
+            item_info = indx, global_indx, item
             future = executor.submit(func, item_info, *args, task_info)
             futures[future] = task
             manage_running_tasks(futures, job_progress)
@@ -130,9 +133,11 @@ def download_chapter(
 ) -> None:
     """Download all pages for a specific manga chapter and updates the progress."""
     job_progress, task, overall_task = task_info
-    indx_chapter, base_download_link = item_info
+    indx_chapter, global_indx_chapter, base_download_link = item_info
 
-    download_path = create_download_directory(manga_name, indx_chapter)
+    chapter_label = f"Chapter {global_indx_chapter + 1}"
+
+    download_path = create_download_directory(manga_name, global_indx_chapter)
     num_pages = int(pages_per_chapter[indx_chapter])
 
     for page in range(1, num_pages + 1):
@@ -143,6 +148,7 @@ def download_chapter(
 
         progress_percentage = (page / num_pages) * 100
         job_progress.update(task, completed=progress_percentage)
+        update_chapter_progress(chapter_label, progress_percentage)
 
     job_progress.update(task, completed=100, visible=False)
     job_progress.advance(overall_task)
