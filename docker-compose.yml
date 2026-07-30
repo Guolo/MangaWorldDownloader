@@ -1,0 +1,10 @@
+services:
+  manga-downloader:
+    #build: . #Uncomment this line and comment out the one below if you want to build the image yourself.
+    image: alguolo/mangaworld_downloader:stable
+    container_name: mangaworld_downloader
+    ports:
+      - "6060:6060"
+    volumes:
+      - ${MANGA_PATH}:/app/Downloads
+    restart: unless-stopped
