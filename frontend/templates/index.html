@@ -206,12 +206,12 @@
 
     <form id="downloadForm">
       <div class="field">
-        <label for="mangaUrl">URL Manga</label>
+        <label for="mangaUrl">Manga URL</label>
         <input type="text" id="mangaUrl" placeholder="https://www.mangaworld.../manga/..." required>
       </div>
 
       <div class="field">
-        <label for="mode">Tipo</label>
+        <label for="mode">Type</label>
         <select id="mode">
           <option value="volumes">Volumes</option>
           <option value="chapters">Chapters</option>
@@ -234,7 +234,7 @@
 
     <div id="output"></div>
 
-    <p class="hint">Inserisci l'URL della serie e l'intervallo desiderato.</p>
+    <p class="hint">Enter the series URL and the desired range.</p>
   </div>
 
 <script>
@@ -253,9 +253,9 @@
     };
 
     output.className = 'visible';
-    output.textContent = 'Download in corso...';
+    output.textContent = 'Downloading...';
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Attendere...';
+    submitBtn.textContent = 'Wait...';
 
     try {
       const res = await fetch('/run', {
@@ -267,14 +267,14 @@
 
       if (data.success) {
         output.className = 'visible ok';
-        output.textContent = '✓ Download completato con successo.';
+        output.textContent = '✓ Download completed successfully!';
       } else {
         output.className = 'visible error';
-        output.textContent = 'Errore: ' + (data.error || data.stderr || 'sconosciuto');
+        output.textContent = 'Error: ' + (data.error || data.stderr || 'unknown');
       }
     } catch (err) {
       output.className = 'visible error';
-      output.textContent = 'Errore di rete: ' + err.message;
+      output.textContent = 'Network error: ' + err.message;
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Download';
