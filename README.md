@@ -1,7 +1,7 @@
 # Anime Unity Downloader (Dockerized Web UI)
 A full-stack, containerized application to download your favorite manga from Manga World with ease.  This project takes the powerful core logic of the original downloader and wraps it into a simple web interface, making it accessible even to those who aren't comfortable with the command line.  
 
- <img width="661" height="693" alt="Screenshot 2026-07-30 alle 13 08 47" src="https://github.com/user-attachments/assets/dbe9ac69-a32a-41cd-936f-057982acefc7" />
+<img width="650" height="672" alt="Screenshot 2026-07-30 alle 15 21 32" src="https://github.com/user-attachments/assets/0fe53680-0328-4e71-aeae-4234a2f63e8d" />
 
 > [!IMPORTANT]
 > This tool is for educational purposes only. Please respect the terms of service of the original platform and support the anime & manga industry by using official streaming services whenever possible.
