@@ -1,0 +1,15 @@
+{
+  "manga_name": "20th Century Betto",
+  "overall": {
+    "percentage": 100.0,
+    "completed": 1,
+    "total": 1
+  },
+  "chapters": [
+    {
+      "label": "Chapter 1",
+      "percentage": 100.0,
+      "done": true
+    }
+  ]
+}

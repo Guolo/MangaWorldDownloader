@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MangaWorldDowloader</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --paper: #ECEAE4;
+    --paper-dim: #E0DDD5;
+    --ink: #1C1C1C;
+    --ink-soft: #59564F;
+    --stamp: #C1392B;
+    --stamp-dark: #9C2E22;
+    --line: #C9C5BB;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle, var(--line) 1px, transparent 1.2px) 0 0/14px 14px,
+      var(--paper);
+    color: var(--ink);
+    font-family:'Work Sans', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+  }
+
+  .sheet{
+    width:100%;
+    max-width:440px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 40px 36px 36px;
+    position:relative;
+  }
+
+  .sheet::before{
+    content:"";
+    position:absolute;
+    top:10px; left:10px; right:10px; bottom:10px;
+    border:1px solid var(--line);
+    pointer-events:none;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:32px;
+  }
+
+  h1{
+    font-family:'Archivo Black', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    margin: 0;
+    line-height:1.15;
+    transform: rotate(-1deg);
+  }
+
+  h1 span{
+    display:block;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing: 3px;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    margin-top:8px;
+    transform: rotate(1deg);
+  }
+
+  .field{
+    margin-bottom:20px;
+  }
+
+  label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing: 1.5px;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    margin-bottom:6px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select{
+    width:100%;
+    padding: 11px 12px;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    color: var(--ink);
+    background: #fff;
+    border: 1.5px solid var(--ink);
+    border-radius: 0;
+    outline:none;
+    transition: box-shadow .15s ease;
+  }
+
+  input:focus, select:focus{
+    box-shadow: 2px 2px 0 var(--stamp);
+  }
+
+  select{
+    appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><polygon points='0,0 10,0 5,6' fill='%231C1C1C'/></svg>");
+    background-repeat:no-repeat;
+    background-position: right 14px center;
+    cursor:pointer;
+  }
+
+  .row{
+    display:flex;
+    gap:14px;
+  }
+  .row .field{
+    flex:1;
+  }
+
+  button{
+    width:100%;
+    margin-top:8px;
+    padding: 14px;
+    font-family:'Archivo Black', sans-serif;
+    font-size:15px;
+    letter-spacing: 1px;
+    color:#fff;
+    background: var(--stamp);
+    border: 2px solid var(--ink);
+    cursor:pointer;
+    position:relative;
+    transition: transform .1s ease, box-shadow .1s ease;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  button:hover{
+    background: var(--stamp-dark);
+  }
+
+  button:active{
+    transform: translate(4px,4px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  button:disabled{
+    opacity:0.6;
+    cursor:not-allowed;
+  }
+
+  .hint{
+    margin-top:18px;
+    font-size:11.5px;
+    color: var(--ink-soft);
+    text-align:center;
+    line-height:1.5;
+  }
+
+  #output{
+    margin-top:20px;
+    padding:12px 14px;
+    background:#fff;
+    border:1.5px solid var(--ink);
+    font-family:'Work Sans', monospace;
+    font-size:12.5px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    max-height:260px;
+    overflow-y:auto;
+    display:none;
+  }
+
+  #output.visible{
+    display:block;
+  }
+
+  #output.error{
+    border-color: var(--stamp);
+    color: var(--stamp-dark);
+  }
+
+  #output.ok{
+    border-color: #2f6b3f;
+    color: #2f6b3f;
+    font-weight: 600;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <div class="sheet">
+    <header>
+      <h1>MangaWorldDowloader
+        <span>seleziona &middot; scarica &middot; leggi</span>
+      </h1>
+    </header>
+
+    <form id="downloadForm">
+      <div class="field">
+        <label for="mangaUrl">URL Manga</label>
+        <input type="text" id="mangaUrl" placeholder="https://www.mangaworld.../manga/..." required>
+      </div>
+
+      <div class="field">
+        <label for="mode">Tipo</label>
+        <select id="mode">
+          <option value="volumes">Volumes</option>
+          <option value="chapters">Chapters</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="start">Start</label>
+          <input type="number" id="start" min="0" step="1" placeholder="1">
+        </div>
+        <div class="field">
+          <label for="end">End</label>
+          <input type="number" id="end" min="0" step="1" placeholder="10">
+        </div>
+      </div>
+
+      <button type="submit" id="submitBtn">Download</button>
+    </form>
+
+    <div id="output"></div>
+
+    <p class="hint">Inserisci l'URL della serie e l'intervallo desiderato.</p>
+  </div>
+
+<script>
+  const form = document.getElementById('downloadForm');
+  const output = document.getElementById('output');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+
+    const payload = {
+      url: document.getElementById('mangaUrl').value.trim(),
+      mode: document.getElementById('mode').value,
+      start: document.getElementById('start').value,
+      end: document.getElementById('end').value
+    };
+
+    output.className = 'visible';
+    output.textContent = 'Download in corso...';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Attendere...';
+
+    try {
+      const res = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        output.className = 'visible ok';
+        output.textContent = '✓ Download completato con successo.';
+      } else {
+        output.className = 'visible error';
+        output.textContent = 'Errore: ' + (data.error || data.stderr || 'sconosciuto');
+      }
+    } catch (err) {
+      output.className = 'visible error';
+      output.textContent = 'Errore di rete: ' + err.message;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Download';
+    }
+  });
+</script>
+
+</body>
+</html>
