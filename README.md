@@ -33,7 +33,7 @@ services:
       - ${MANGA_PATH}:/app/Downloads
     restart: unless-stopped
 ```
-Create a ```.env``` file to set your local download paths:
+In the same directory create a ```.env``` file to set your local download paths:
 ```
 nano .env
 ```
