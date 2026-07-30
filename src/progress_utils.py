@@ -1,8 +1,14 @@
 """Utility functions for tracking download progress using the Rich library.
-
 It includes features for creating a progress bar and a formatted progress table
 specifically designed for monitoring the download status of the current taks.
+
+It also exposes a JSON progress file (progress.json) that mirrors the current
+download state, meant to be read by external dashboards (e.g. Glance).
 """
+import json
+import logging
+import threading
+from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
@@ -15,6 +21,93 @@ from rich.progress import (
 )
 from rich.prompt import Prompt
 from rich.table import Table
+
+# progetto/backend/src/progress_utils.py -> progetto/frontend/static/progress.json
+PROGRESS_FILE = (
+    Path(__file__).resolve().parents[2] / "frontend" / "static" / "progress.json"
+)
+
+# Stato condiviso in memoria per il processo di download.
+# NB: se manga_downloader.py viene lanciato come subprocess separato da app.py,
+# questo stato vive SOLO in quel processo: la condivisione con Flask avviene
+# esclusivamente tramite il file su disco (PROGRESS_FILE), non tramite import.
+_progress_lock = threading.Lock()
+_progress_state: dict = {}
+
+
+def init_progress_state(manga_name: str, chapter_labels: list[str]) -> None:
+    """Initialize the in-memory progress state and write the first progress.json."""
+    global _progress_state
+    with _progress_lock:
+        _progress_state = {
+            "manga_name": manga_name,
+            "chapters": {
+                label: {"label": label, "percentage": 0.0, "done": False}
+                for label in chapter_labels
+            },
+        }
+    write_progress_file()
+
+
+def update_chapter_progress(label: str, percentage: float) -> None:
+    """Update the progress of a single chapter and persist the new state to disk."""
+    with _progress_lock:
+        chapter = _progress_state.get("chapters", {}).get(label)
+        if chapter is not None:
+            chapter["percentage"] = round(percentage, 1)
+            chapter["done"] = percentage >= 100
+
+    write_progress_file()
+
+
+def write_progress_file() -> None:
+    """Serialize the current progress state to PROGRESS_FILE (atomic write).
+
+    Everything (build data + write tmp file + rename) happens under the same
+    lock: multiple worker threads call this several times per second, and if
+    the write itself weren't serialized too, two threads could race on the
+    same .tmp path and make Path.replace() raise FileNotFoundError, killing
+    the calling download thread silently. A failure here must also never be
+    allowed to propagate and abort an actual page download, so it's caught
+    and just logged.
+    """
+    with _progress_lock:
+        chapters = list(_progress_state.get("chapters", {}).values())
+        total = len(chapters)
+        completed = sum(1 for chapter in chapters if chapter["done"])
+        overall_pct = (
+            sum(chapter["percentage"] for chapter in chapters) / total
+            if total
+            else 0.0
+        )
+
+        data = {
+            "manga_name": _progress_state.get("manga_name", ""),
+            "overall": {
+                "percentage": round(overall_pct, 1),
+                "completed": completed,
+                "total": total,
+            },
+            "chapters": chapters,
+        }
+
+        try:
+            PROGRESS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            tmp_path = PROGRESS_FILE.with_suffix(".tmp")
+            with tmp_path.open("w", encoding="utf-8") as file:
+                json.dump(data, file)
+            # Rename atomico: evita che glance legga un file a metà scrittura
+            tmp_path.replace(PROGRESS_FILE)
+        except OSError as os_err:
+            logging.warning(f"Could not write progress.json: {os_err}")
+
+
+def reset_progress_file() -> None:
+    """Reset progress.json at the start/end of a full run (optional helper)."""
+    global _progress_state
+    with _progress_lock:
+        _progress_state = {}
+    write_progress_file()
 
 
 def create_progress_bar() -> Progress:
@@ -45,9 +138,7 @@ def create_progress_table(title: str, job_progress: Progress) -> Table:
 
 def create_select_items_list(items: list[str], display_limit: int = 15) -> list[int]:
     """Show a numbered list of items and allow the user to select one or more indexes.
-
     Return the list of selected 0-based indexes
-
     If there are more than 15 volumes,
         return the list in a compact format like this:
         [1] Volume 01
@@ -56,7 +147,6 @@ def create_select_items_list(items: list[str], display_limit: int = 15) -> list[
     """
     console = Console()
     console.print("[bold]Please select volume(s) to download[/bold]")
-
     # Compact list format
     if len(items) > display_limit:
         console.print(
