@@ -53,6 +53,18 @@ Once the container is running, you can access the interface at:
 ```
 http://your_ip:6060
 ```
+
+# How to use it
+Enter URL: Paste the MangaWorld manga URL.
+
+Select Mode: Choose whether to download individual chapters or full volumes.
+
+Set Range (Optional): Specify a start and/or end point:
+- Start & End (e.g., Start 10, End 20): Downloads items from 10 to 20 inclusive.
+- Start only (e.g., Start 10): Downloads everything from item 10 up to the latest available.
+- End only (e.g., End 10): Downloads everything from the first available item up to 10.
+- Leave both blank: Downloads all available chapters or volumes.
+
 # Monitoring Progress
 
 If you want to check the raw download data, the application exposes the progress file directly via HTTP. This is useful for debugging or verifying the real-time status:
