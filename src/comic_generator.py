@@ -26,8 +26,14 @@ def count_subsubfolders(main_folder: str) -> int:
     return total_subsubfolders
 
 
-def convert2cbz(image_paths: list[Path], output_cbz_path: str) -> None:
-    """Convert a list of image paths into a CBZ archive."""
+def convert2cbz(image_paths: list[Path], output_cbz_path: str, base_folder: Path | None = None) -> None:
+    """Convert a list of image paths into a CBZ archive.
+
+    If base_folder is provided, the internal archive name preserves the path
+    relative to base_folder (e.g. 'Chapter 1/3.jpg'), avoiding name collisions
+    when images from multiple subfolders (chapters) share the same filename.
+    Otherwise, only the filename is used (safe for a single flat folder).
+    """
     if not image_paths:
         logging.error("No images provided to convert.")
         return
@@ -40,9 +46,14 @@ def convert2cbz(image_paths: list[Path], output_cbz_path: str) -> None:
         compression=zipfile.ZIP_DEFLATED,
     ) as cbz_file:
         for image_path in image_paths:
+            if base_folder is not None:
+                arcname = str(image_path.relative_to(base_folder))
+            else:
+                arcname = image_path.name
+
             cbz_file.write(
                 image_path,
-                arcname=image_path.name,
+                arcname=arcname,
             )
 
     logging.info("CBZ created: %s", output_cbz)
@@ -120,18 +131,16 @@ def generate_file_from_folder(folder_path: str, *, output_format: str) -> None:
     folder = Path(folder_path)
     output_path = Path.cwd() / folder.parent / f"{folder.name}.{output_format}"
 
-    converters = {
-        "pdf": convert2pdf,
-        "cbz": convert2cbz,
-    }
-
-    converter = converters.get(output_format.lower())
-
-    if converter is None:
+    if output_format.lower() == "pdf":
+        convert2pdf(image_paths, str(output_path))
+    elif output_format.lower() == "cbz":
+        # base_folder=folder: preserva la sottocartella (es. "Chapter 1") nel nome
+        # interno all'archivio, evitando collisioni tra pagine di capitoli diversi
+        # quando folder_path è un volume con più sottocartelle.
+        convert2cbz(image_paths, str(output_path), base_folder=folder)
+    else:
         log_message = f"Unsupported output format: {output_format}"
         raise ValueError(log_message)
-
-    converter(image_paths, str(output_path))
 
 
 def generate_comic_files(
