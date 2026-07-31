@@ -43,6 +43,8 @@ def process_comic_generation(
     *,
     single_file: bool = False,
     output_format: str = "pdf",
+    output_name: str | None = None,
+    target_folders: list[str] | None = None,
 ) -> None:
     """Process the generation of comic files for a specific manga."""
     manga_parent_folder = Path(DOWNLOAD_FOLDER) / manga_name
@@ -51,6 +53,8 @@ def process_comic_generation(
         job_progress,
         single_file=single_file,
         output_format=output_format,
+        output_name=output_name,
+        target_folders=target_folders,
     )
 
 
@@ -91,11 +95,14 @@ def download_chapter_with_progress(
         )
         if output_format:
             single_file = volume_name is not None
+            output_name = f"{manga_name} - {volume_name}" if volume_name else None
             process_comic_generation(
                 working_path,
                 job_progress,
                 single_file=single_file,
                 output_format=output_format,
+                output_name=output_name,
+                target_folders=None if single_file else chapter_labels,
             )
 
 
