@@ -118,7 +118,7 @@ def collect_image_paths(folder: str) -> list[str]:
     return image_paths
 
 
-def generate_file_from_folder(folder_path: str, *, output_format: str) -> None:
+def generate_file_from_folder(folder_path: str, *, output_format: str, output_name: str | None = None) -> None:
     """Generate a comic file from all images contained in a folder.
 
     The output format can be either PDF or CBZ.
@@ -129,14 +129,12 @@ def generate_file_from_folder(folder_path: str, *, output_format: str) -> None:
         return
 
     folder = Path(folder_path)
-    output_path = Path.cwd() / folder.parent / f"{folder.name}.{output_format}"
+    file_stem = output_name if output_name else folder.name
+    output_path = Path.cwd() / folder.parent / f"{file_stem}.{output_format}"
 
     if output_format.lower() == "pdf":
         convert2pdf(image_paths, str(output_path))
     elif output_format.lower() == "cbz":
-        # base_folder=folder: preserva la sottocartella (es. "Chapter 1") nel nome
-        # interno all'archivio, evitando collisioni tra pagine di capitoli diversi
-        # quando folder_path è un volume con più sottocartelle.
         convert2cbz(image_paths, str(output_path), base_folder=folder)
     else:
         log_message = f"Unsupported output format: {output_format}"
@@ -150,8 +148,37 @@ def generate_comic_files(
     is_module: bool = False,
     single_file: bool = False,
     output_format: str = "pdf",
+    output_name: str | None = None,
+    target_folders: list[str] | None = None,
 ) -> None:
-    """Generate comic files from images in each subfolder of the parent folder."""
+    """Generate comic files from images in each subfolder of the parent folder.
+
+    If target_folders is provided (list of subfolder names), only those specific
+    subfolders are processed instead of walking the entire parent_folder tree.
+    This avoids re-generating files for unrelated folders (e.g. old volumes)
+    that happen to live alongside the newly downloaded content.
+    """
+    if single_file:
+        task = job_progress.add_task(
+            f"[cyan]Generating {output_format.upper()} files",
+            total=1,
+        )
+        generate_file_from_folder(parent_folder, output_format=output_format, output_name=output_name)
+        job_progress.advance(task)
+        return
+
+    if target_folders is not None:
+        task = job_progress.add_task(
+            f"[cyan]Generating {output_format.upper()} files",
+            total=len(target_folders),
+        )
+        for folder_name in target_folders:
+            folder_path = Path(parent_folder) / folder_name
+            if folder_path.is_dir():
+                generate_file_from_folder(str(folder_path), output_format=output_format)
+            job_progress.advance(task)
+        return
+
     num_folders = (
         count_subsubfolders(DOWNLOAD_FOLDER)
         if is_module
@@ -161,17 +188,11 @@ def generate_comic_files(
         f"[cyan]Generating {output_format.upper()} files",
         total=num_folders,
     )
-
-    if single_file:
-        generate_file_from_folder(parent_folder, output_format=output_format)
-        job_progress.advance(task, num_folders)
-
-    else:
-        for path, _, _ in os.walk(parent_folder):
-            manga_name = Path(path).parent.name
-            if manga_name != DOWNLOAD_FOLDER:
-                generate_file_from_folder(path, output_format=output_format)
-                job_progress.advance(task)
+    for path, _, _ in os.walk(parent_folder):
+        manga_name = Path(path).parent.name
+        if manga_name != DOWNLOAD_FOLDER:
+            generate_file_from_folder(path, output_format=output_format)
+            job_progress.advance(task)
 
 
 def main() -> None:
