@@ -41,6 +41,7 @@
     box-shadow: 6px 6px 0 var(--ink);
     padding: 40px 36px 36px;
     position:relative;
+    overflow:hidden;
   }
 
   .sheet::before{
@@ -58,11 +59,14 @@
 
   h1{
     font-family:'Archivo Black', sans-serif;
-    font-size: 26px;
+    font-size: clamp(17px, 6.5vw, 26px);
     letter-spacing: 0.5px;
     margin: 0;
     line-height:1.15;
     transform: rotate(-1deg);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   h1 span{
@@ -192,6 +196,11 @@
     color: #2f6b3f;
     font-weight: 600;
     text-align: center;
+  }
+
+  @media (max-width: 420px){
+    body{ padding: 16px; }
+    .sheet{ padding: 28px 20px 24px; }
   }
 </style>
 </head>
